@@ -449,23 +449,28 @@ ps2_check_event(void)
 static void
 ps2_keyboard_setup(void *data)
 {
+    dprintf(1, "ps2_keyboard_setup 1\n");
     // flush incoming keys (also verifies port is likely present)
     int ret = i8042_flush();
     if (ret)
         return;
 
+    dprintf(1, "ps2_keyboard_setup 2\n");
     // Disable keyboard / mouse and drain any input they may have sent
     ret = i8042_command(I8042_CMD_KBD_DISABLE, NULL);
     if (ret)
         return;
+    dprintf(1, "ps2_keyboard_setup 3\n");
     ret = i8042_command(I8042_CMD_AUX_DISABLE, NULL);
     if (ret)
         return;
+    dprintf(1, "ps2_keyboard_setup 4\n");
     ret = i8042_flush();
     if (ret)
         return;
 
     // Controller self-test.
+    dprintf(1, "ps2_keyboard_setup 5\n");
     u8 param[2];
     ret = i8042_command(I8042_CMD_CTL_TEST, param);
     if (ret)
@@ -475,6 +480,7 @@ ps2_keyboard_setup(void *data)
         return;
     }
 
+    dprintf(1, "ps2_keyboard_setup 6\n");
     // Controller keyboard test.
     ret = i8042_command(I8042_CMD_KBD_TEST, param);
     if (ret)
@@ -488,6 +494,7 @@ ps2_keyboard_setup(void *data)
     /* ------------------- keyboard side ------------------------*/
     /* reset keyboard and self test  (keyboard side) */
     int spinupdelay = romfile_loadint("etc/ps2-keyboard-spinup", 0);
+    dprintf(1, "spinupdelay is %d\n", spinupdelay);
     u32 end = timer_calc(spinupdelay);
     for (;;) {
         ret = ps2_kbd_command(ATKBD_CMD_RESET_BAT, param);
@@ -505,21 +512,25 @@ ps2_keyboard_setup(void *data)
         return;
     }
 
+    dprintf(1, "ps2_keyboard_setup 7\n");
     /* Disable keyboard */
     ret = ps2_kbd_command(ATKBD_CMD_RESET_DIS, NULL);
     if (ret)
         return;
 
+    dprintf(1, "ps2_keyboard_setup 8\n");
     // Set scancode command (mode 2)
     param[0] = 0x02;
     ret = ps2_kbd_command(ATKBD_CMD_SSCANSET, param);
     if (ret)
         return;
 
+    dprintf(1, "ps2_keyboard_setup 9\n");
     // Keyboard Mode: disable mouse, scan code convert, enable kbd IRQ
     Ps2ctr = (I8042_CTR_AUXDIS | I8042_CTR_XLATE
               | (CONFIG_HARDWARE_IRQ ? I8042_CTR_KBDINT : 0));
 
+    dprintf(1, "ps2_keyboard_setup 10\n");
     /* Enable keyboard */
     ret = ps2_kbd_command(ATKBD_CMD_ENABLE, NULL);
     if (ret)
