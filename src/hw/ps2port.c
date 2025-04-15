@@ -449,6 +449,10 @@ ps2_check_event(void)
 static void
 ps2_keyboard_setup(void *data)
 {
+    u8 param[2];
+    u32 end;
+    int spinupdelay;
+
     if(0)
     {
         dprintf(1, "ps2_keyboard_setup 1\n");
@@ -473,7 +477,6 @@ ps2_keyboard_setup(void *data)
 
         // Controller self-test.
         dprintf(1, "ps2_keyboard_setup 5\n");
-        u8 param[2];
         ret = i8042_command(I8042_CMD_CTL_TEST, param);
         if (ret)
             return;
@@ -495,9 +498,9 @@ ps2_keyboard_setup(void *data)
 
         /* ------------------- keyboard side ------------------------*/
         /* reset keyboard and self test  (keyboard side) */
-        int spinupdelay = romfile_loadint("etc/ps2-keyboard-spinup", 0);
+        spinupdelay = romfile_loadint("etc/ps2-keyboard-spinup", 0);
         dprintf(1, "spinupdelay is %d\n", spinupdelay);
-        u32 end = timer_calc(spinupdelay);
+        end = timer_calc(spinupdelay);
         for (;;) {
             ret = ps2_kbd_command(ATKBD_CMD_RESET_BAT, param);
             if (!ret)
