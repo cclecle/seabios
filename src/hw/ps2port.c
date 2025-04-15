@@ -449,74 +449,77 @@ ps2_check_event(void)
 static void
 ps2_keyboard_setup(void *data)
 {
-    dprintf(1, "ps2_keyboard_setup 1\n");
-    // flush incoming keys (also verifies port is likely present)
-    int ret = i8042_flush();
-    if (ret)
-        return;
+    if(0)
+    {
+        dprintf(1, "ps2_keyboard_setup 1\n");
+        // flush incoming keys (also verifies port is likely present)
+        int ret = i8042_flush();
+        if (ret)
+            return;
 
-    dprintf(1, "ps2_keyboard_setup 2\n");
-    // Disable keyboard / mouse and drain any input they may have sent
-    ret = i8042_command(I8042_CMD_KBD_DISABLE, NULL);
-    if (ret)
-        return;
-    dprintf(1, "ps2_keyboard_setup 3\n");
-    ret = i8042_command(I8042_CMD_AUX_DISABLE, NULL);
-    if (ret)
-        return;
-    dprintf(1, "ps2_keyboard_setup 4\n");
-    ret = i8042_flush();
-    if (ret)
-        return;
+        dprintf(1, "ps2_keyboard_setup 2\n");
+        // Disable keyboard / mouse and drain any input they may have sent
+        ret = i8042_command(I8042_CMD_KBD_DISABLE, NULL);
+        if (ret)
+            return;
+        dprintf(1, "ps2_keyboard_setup 3\n");
+        ret = i8042_command(I8042_CMD_AUX_DISABLE, NULL);
+        if (ret)
+            return;
+        dprintf(1, "ps2_keyboard_setup 4\n");
+        ret = i8042_flush();
+        if (ret)
+            return;
 
-    // Controller self-test.
-    dprintf(1, "ps2_keyboard_setup 5\n");
-    u8 param[2];
-    ret = i8042_command(I8042_CMD_CTL_TEST, param);
-    if (ret)
-        return;
-    if (param[0] != 0x55) {
-        dprintf(1, "i8042 self test failed (got %x not 0x55)\n", param[0]);
-        return;
-    }
-
-    dprintf(1, "ps2_keyboard_setup 6\n");
-    // Controller keyboard test.
-    ret = i8042_command(I8042_CMD_KBD_TEST, param);
-    if (ret)
-        return;
-    if (param[0] != 0x00) {
-        dprintf(1, "i8042 keyboard test failed (got %x not 0x00)\n", param[0]);
-        return;
-    }
-
-
-    /* ------------------- keyboard side ------------------------*/
-    /* reset keyboard and self test  (keyboard side) */
-    int spinupdelay = romfile_loadint("etc/ps2-keyboard-spinup", 0);
-    dprintf(1, "spinupdelay is %d\n", spinupdelay);
-    u32 end = timer_calc(spinupdelay);
-    for (;;) {
-        ret = ps2_kbd_command(ATKBD_CMD_RESET_BAT, param);
-        if (!ret)
-            break;
-        if (timer_check(end)) {
-            if (spinupdelay)
-                warn_timeout();
+        // Controller self-test.
+        dprintf(1, "ps2_keyboard_setup 5\n");
+        u8 param[2];
+        ret = i8042_command(I8042_CMD_CTL_TEST, param);
+        if (ret)
+            return;
+        if (param[0] != 0x55) {
+            dprintf(1, "i8042 self test failed (got %x not 0x55)\n", param[0]);
             return;
         }
-        yield();
-    }
-    if (param[0] != 0xaa) {
-        dprintf(1, "keyboard self test failed (got %x not 0xaa)\n", param[0]);
-        return;
-    }
 
-    dprintf(1, "ps2_keyboard_setup 7\n");
-    /* Disable keyboard */
-    ret = ps2_kbd_command(ATKBD_CMD_RESET_DIS, NULL);
-    if (ret)
-        return;
+        dprintf(1, "ps2_keyboard_setup 6\n");
+        // Controller keyboard test.
+        ret = i8042_command(I8042_CMD_KBD_TEST, param);
+        if (ret)
+            return;
+        if (param[0] != 0x00) {
+            dprintf(1, "i8042 keyboard test failed (got %x not 0x00)\n", param[0]);
+            return;
+        }
+
+
+        /* ------------------- keyboard side ------------------------*/
+        /* reset keyboard and self test  (keyboard side) */
+        int spinupdelay = romfile_loadint("etc/ps2-keyboard-spinup", 0);
+        dprintf(1, "spinupdelay is %d\n", spinupdelay);
+        u32 end = timer_calc(spinupdelay);
+        for (;;) {
+            ret = ps2_kbd_command(ATKBD_CMD_RESET_BAT, param);
+            if (!ret)
+                break;
+            if (timer_check(end)) {
+                if (spinupdelay)
+                    warn_timeout();
+                return;
+            }
+            yield();
+        }
+        if (param[0] != 0xaa) {
+            dprintf(1, "keyboard self test failed (got %x not 0xaa)\n", param[0]);
+            return;
+        }
+
+        dprintf(1, "ps2_keyboard_setup 7\n");
+        /* Disable keyboard */
+        ret = ps2_kbd_command(ATKBD_CMD_RESET_DIS, NULL);
+        if (ret)
+            return;
+    }
 
     dprintf(1, "ps2_keyboard_setup 8\n");
     // Set scancode command (mode 2)
