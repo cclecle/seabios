@@ -452,12 +452,13 @@ ps2_keyboard_setup(void *data)
     u8 param[2];
     u32 end;
     int spinupdelay;
+    int ret;
 
     if(0)
     {
         dprintf(1, "ps2_keyboard_setup 1\n");
         // flush incoming keys (also verifies port is likely present)
-        int ret = i8042_flush();
+        ret = i8042_flush();
         if (ret)
             return;
 
