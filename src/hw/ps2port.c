@@ -454,7 +454,7 @@ ps2_keyboard_setup(void *data)
     int spinupdelay;
     int ret;
 
-    if(0)
+    if(1)
     {
         dprintf(1, "ps2_keyboard_setup 1\n");
         // flush incoming keys (also verifies port is likely present)
