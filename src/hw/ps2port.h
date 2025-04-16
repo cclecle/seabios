@@ -51,7 +51,7 @@
 
 // Control register bits.
 #define I8042_CTR_KBDINT        0x01
-#define I8042_CTR_AUXINT        0x02
+#define I8042_CTR_AUXINT        0x0c //INT12 (was 0x02)
 #define I8042_CTR_IGNKEYLOCK    0x08
 #define I8042_CTR_KBDDIS        0x10
 #define I8042_CTR_AUXDIS        0x20
