@@ -420,6 +420,7 @@ ata_dma_transfer(struct disk_op_s *op)
     struct ata_channel_s *chan_gf = GET_GLOBALFLAT(adrive_gf->chan_gf);
     u16 iomaster = GET_GLOBALFLAT(chan_gf->iomaster);
 
+    dprintf(6, "DMA Start iomaster=0x%x",iomaster);
     // Start bus-master controller.
     u8 oldcmd = inb(iomaster + BM_CMD);
     outb(oldcmd | BM_CMD_START, iomaster + BM_CMD);
@@ -428,6 +429,7 @@ ata_dma_transfer(struct disk_op_s *op)
     u8 status;
     for (;;) {
         status = inb(iomaster + BM_STATUS);
+        dprintf(6, "status=0x%x",iomaster);
         if (status & BM_STATUS_IRQ)
             break;
         // Transfer in progress
