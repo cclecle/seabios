@@ -399,7 +399,7 @@ ata_try_dma(struct disk_op_s *op, int iswrite, int blocksize)
     }
 
     // Program bus-master controller.
-    dprintf(6, "ata_try_dma origdma=0x%p, iomaster=0x%x \n", origdma, iomaster);
+    dprintf(6, "ata_try_dma origdma=%p, iomaster=0x%x \n", origdma, iomaster);
     outl((u32)origdma, iomaster + BM_TABLE);
     u8 oldcmd = inb(iomaster + BM_CMD) & ~(BM_CMD_MEMWRITE|BM_CMD_START);
     outb(oldcmd | (iswrite ? 0x00 : BM_CMD_MEMWRITE), iomaster + BM_CMD);
@@ -842,6 +842,14 @@ init_drive_ata(struct atadrive_s *dummy, u16 *buffer)
                 adrive->chan_gf->ataid, adrive->slave, 
                 udma_mode, multi_dma, pio_mode);
 
+    // Set mwDMA mode 2 (ATA 40, => not 80)
+    struct ata_pio_command cmd;
+    memset(&cmd, 0, sizeof(cmd));
+    cmd.command = ATA_CMD_SET_FEATURES;
+    cmd.feature = 0x03;
+    cmd.sector_count = 0x22; // mwDMA mode 2
+    ret = ata_cmd_nondata(adrive, &cmd);
+    dprintf(1, "set drive=%p dma=%d\n", adrive, ret)  
 
     boot_lchs_find_ata_device(adrive->chan_gf->pci_tmp,
                               adrive->chan_gf->chanid,
