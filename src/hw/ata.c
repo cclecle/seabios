@@ -849,7 +849,7 @@ init_drive_ata(struct atadrive_s *dummy, u16 *buffer)
     cmd.feature = 0x03;
     cmd.sector_count = 0x22; // mwDMA mode 2
     ret = ata_cmd_nondata(adrive, &cmd);
-    dprintf(1, "set drive=%p dma=%d\n", adrive, ret)  
+    dprintf(1, "set drive=%p dma=%d\n", adrive, ret) ;
 
     boot_lchs_find_ata_device(adrive->chan_gf->pci_tmp,
                               adrive->chan_gf->chanid,
