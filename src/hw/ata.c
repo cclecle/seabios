@@ -399,6 +399,7 @@ ata_try_dma(struct disk_op_s *op, int iswrite, int blocksize)
     }
 
     // Program bus-master controller.
+    dprintf(6, "ata_try_dma origdma=0x%p, iomaster=0x%x \n", origdma, iomaster);
     outl((u32)origdma, iomaster + BM_TABLE);
     u8 oldcmd = inb(iomaster + BM_CMD) & ~(BM_CMD_MEMWRITE|BM_CMD_START);
     outb(oldcmd | (iswrite ? 0x00 : BM_CMD_MEMWRITE), iomaster + BM_CMD);
@@ -420,7 +421,7 @@ ata_dma_transfer(struct disk_op_s *op)
     struct ata_channel_s *chan_gf = GET_GLOBALFLAT(adrive_gf->chan_gf);
     u16 iomaster = GET_GLOBALFLAT(chan_gf->iomaster);
 
-    dprintf(6, "DMA Start iomaster=0x%x",iomaster);
+    dprintf(6, "DMA Start iomaster=0x%x\n",iomaster);
     // Start bus-master controller.
     u8 oldcmd = inb(iomaster + BM_CMD);
     outb(oldcmd | BM_CMD_START, iomaster + BM_CMD);
@@ -429,7 +430,7 @@ ata_dma_transfer(struct disk_op_s *op)
     u8 status;
     for (;;) {
         status = inb(iomaster + BM_STATUS);
-        dprintf(6, "status=0x%x",iomaster);
+        dprintf(6, "status=0x%x\n",status);
         if (status & BM_STATUS_IRQ)
             break;
         // Transfer in progress
@@ -811,6 +812,37 @@ init_drive_ata(struct atadrive_s *dummy, u16 *buffer)
     int prio = bootprio_find_ata_device(adrive->chan_gf->pci_tmp,
                                         adrive->chan_gf->chanid,
                                         adrive->slave);
+
+    s8 multi_dma = -1;
+    s8 pio_mode = -1;
+    s8 udma_mode = -1;
+    // If bit 2 in word 53 is set, udma information is valid in word 88.
+    if (buffer[53] & 0x04) {
+        udma_mode = 6;
+        while ((udma_mode >= 0) &&
+                !((buffer[88] & 0x7f) & ( 1 << udma_mode ))) {
+            udma_mode--;
+        }
+    }
+    // If bit 1 in word 53 is set, multiword-dma and advanced pio modes
+    // are available in words 63 and 64.
+    if (buffer[53] & 0x02) {
+        pio_mode = 4;
+        multi_dma = 3;
+        while ((multi_dma >= 0) &&
+                !((buffer[63] & 0x7) & ( 1 << multi_dma ))) {
+            multi_dma--;
+        }
+        while ((pio_mode >= 3) &&
+                !((buffer[64] & 0x3) & ( 1 << ( pio_mode - 3 ) ))) {
+            pio_mode--;
+        }
+    }
+    dprintf(2, "ata%d-%d: supported modes: udma %d, multi-dma %d, pio %d\n",
+                adrive->chan_gf->ataid, adrive->slave, 
+                udma_mode, multi_dma, pio_mode);
+
+
     boot_lchs_find_ata_device(adrive->chan_gf->pci_tmp,
                               adrive->chan_gf->chanid,
                               adrive->slave,
@@ -958,17 +990,23 @@ init_pciata(struct pci_device *pci, u8 prog_if)
 {
     u8 pciirq = pci_config_readb(pci->bdf, PCI_INTERRUPT_LINE);
     int master = 0;
+    dprintf(1, "init_pciata 1\n");
     if (CONFIG_ATA_DMA && prog_if & 0x80) {
         // Check for bus-mastering.
+        dprintf(1, "init_pciata 2\n");
         u32 bar = pci_config_readl(pci->bdf, PCI_BASE_ADDRESS_4);
-        if (bar & PCI_BASE_ADDRESS_SPACE_IO) {
+        if (bar & PCI_BASE_ADDRESS_SPACE_IO)
+        {
+            dprintf(1, "init_pciata 3\n");
             master = pci_enable_iobar(pci, PCI_BASE_ADDRESS_4);
             pci_enable_busmaster(pci);
         }
     }
+    dprintf(1, "init_pciata 4\n");
 
     u32 port1, port2, irq;
     if (prog_if & 1) {
+        dprintf(1, "init_pciata 5\n");
         port1 = pci_enable_iobar(pci, PCI_BASE_ADDRESS_0);
         port2 = pci_enable_iobar(pci, PCI_BASE_ADDRESS_1);
         if (!port1 || !port2)
@@ -979,9 +1017,11 @@ init_pciata(struct pci_device *pci, u8 prog_if)
         port2 = PORT_ATA1_CTRL_BASE;
         irq = IRQ_ATA1;
     }
+    dprintf(1, "init_pciata 6\n");
     init_controller(pci, 0, irq, port1, port2, master);
 
     if (prog_if & 4) {
+        dprintf(1, "init_pciata 7\n");
         port1 = pci_enable_iobar(pci, PCI_BASE_ADDRESS_2);
         port2 = pci_enable_iobar(pci, PCI_BASE_ADDRESS_3);
         if (!port1 || !port2)
@@ -992,6 +1032,7 @@ init_pciata(struct pci_device *pci, u8 prog_if)
         port2 = PORT_ATA2_CTRL_BASE;
         irq = IRQ_ATA2;
     }
+    dprintf(1, "init_pciata 8\n");
     init_controller(pci, 1, irq, port1, port2, master ? master + 8 : 0);
 }
 
