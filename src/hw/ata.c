@@ -842,12 +842,12 @@ init_drive_ata(struct atadrive_s *dummy, u16 *buffer)
                 adrive->chan_gf->ataid, adrive->slave, 
                 udma_mode, multi_dma, pio_mode);
 
-    // Set mwDMA mode 2 (ATA 40, => not 80)
+    // Set UDMA mode 2 (ATA 40, => not 80)
     struct ata_pio_command cmd;
     memset(&cmd, 0, sizeof(cmd));
     cmd.command = ATA_CMD_SET_FEATURES;
     cmd.feature = 0x03;
-    cmd.sector_count = 0x22; // mwDMA mode 2
+    cmd.sector_count = 0x82; // UDMA mode 2
     ret = ata_cmd_nondata(adrive, &cmd);
     dprintf(1, "set drive=%p dma=%d\n", adrive, ret) ;
 
