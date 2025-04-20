@@ -430,7 +430,6 @@ ata_dma_transfer(struct disk_op_s *op)
     u8 status;
     for (;;) {
         status = inb(iomaster + BM_STATUS);
-        dprintf(6, "status=0x%x\n",status);
         if (status & BM_STATUS_IRQ)
             break;
         // Transfer in progress
@@ -441,6 +440,7 @@ ata_dma_transfer(struct disk_op_s *op)
         }
         yield();
     }
+    dprintf(6, "QUIT LOOP status=0x%x\n",status);
     outb(oldcmd & ~BM_CMD_START, iomaster + BM_CMD);
 
     u16 iobase1 = GET_GLOBALFLAT(chan_gf->iobase1);
@@ -849,7 +849,7 @@ init_drive_ata(struct atadrive_s *dummy, u16 *buffer)
     cmd.feature = 0x03;
     cmd.sector_count = 0x82; // UDMA mode 2
     ret = ata_cmd_nondata(adrive, &cmd);
-    dprintf(1, "set drive=%p dma=%d\n", adrive, ret) ;
+    dprintf(1, "set drive=%p dma=%x\n", adrive, ret) ;
 
     boot_lchs_find_ata_device(adrive->chan_gf->pci_tmp,
                               adrive->chan_gf->chanid,
