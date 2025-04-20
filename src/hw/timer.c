@@ -64,6 +64,7 @@ u8 ShiftTSC VARFSEG;
 static void
 tsctimer_setup(void)
 {
+    dprintf(1, "tsctimer_setup()\n");
     // Setup "timer2"
     u8 orig = inb(PORT_PS2_CTRLB);
     outb((orig & ~PPCB_SPKR) | PPCB_T2GATE, PORT_PS2_CTRLB);
@@ -101,6 +102,7 @@ tsctimer_setup(void)
 void
 timer_setup(void)
 {
+    dprintf(1, "timer_setup()\n");
     if (!CONFIG_TSC_TIMER)
         return;
     if (TimerPort != PORT_PIT_COUNTER0)
@@ -113,6 +115,7 @@ timer_setup(void)
         cpuid(1, &eax, &ebx, &ecx, &cpuid_features);
     if (cpuid_features & CPUID_TSC)
         tsctimer_setup();
+    dprintf(1, "timer_setup() END\n");
 }
 
 void
