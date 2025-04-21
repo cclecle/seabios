@@ -194,7 +194,7 @@ find_resume_vector(void)
 static struct acpi_20_generic_address acpi_reset_reg;
 static u8 acpi_reset_val;
 u32 acpi_pm1a_cnt VARFSEG;
-u16 acpi_pm_base = 0xe400;
+u16 acpi_pm_base = 0xfd00;
 
 #define acpi_ga_to_bdf(addr) pci_to_bdf(0, (addr >> 32) & 0xffff, (addr >> 16) & 0xffff)
 
